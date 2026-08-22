@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ستايل روج | تسوّق أزياءك المفضلة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="marquee">
+  <div class="marquee-track">
+    <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
+    <span data-i18n="marq1">🚚 شحن مجاني لأول طلب</span><span data-i18n="marq2">🔥 خصومات تصل ٤٠٪</span><span data-i18n="marq3">🆕 قطع جديدة أسبوعياً</span><span data-i18n="marq4">💬 اطلب مباشرة عبر واتساب</span>
+  </div>
+</div>
+
+<header>
+  <div class="logo-image">
+  <img src="logo/style-rouge.webp">
+</div>
+  <nav id="nav">
+    <button class="nav-close" onclick="closeNav()">✕</button>
+    <ul>
+      <li><a href="#gallery" data-i18n="nav_shop">تسوّق</a></li>
+      <li><a href="#deals" data-i18n="nav_deals">عروض</a></li>
+      <li><a href="#about" data-i18n="nav_about">من نحن</a></li>
+      <li><a href="#contact" data-i18n="nav_contact">تواصل معنا</a>
+      
+        <li><a href="#" class="menu-language-btn" onclick="openLanguageModal()"> لغة</a></li>
+    </ul>
+  </nav>
+  <div class="header-actions">
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="تبديل المظهر">🌙</button>
+    <button class="cart-btn" onclick="openCart()">🛍️<span class="cart-count" id="cartCount">0</span></button>
+    <button class="search-fab" id="searchFab" onclick="toggleSearchBar()" title="بحث">🔍</button>
+    <button class="burger" onclick="toggleNav()">☰</button>
+  </div>
+</header>
+
+<div class="search-bar" id="searchBar">
+  <div class="search-bar-inner">
+    <input type="text" id="globalSearchInput" class="search-input global-search" placeholder="🔍 بحث برقم المنتج أو الاسم" data-i18n-placeholder="search_placeholder" oninput="handleGlobalSearch(this.value)">
+    <button class="search-bar-close" onclick="toggleSearchBar()">✕</button>
+  </div>
+</div>
+
+<section class="hero">
+  <a href="#gallery" class="top-banner">
+    <img src="logo/style-rouge1.webp" class="logo-img">
+  </a>
+  <div class="hero-text">
+    <div class="hero-eyebrow" data-i18n="hero_eyebrow">تشكيلة ٢٠٢٦</div>
+    <h1 class="display" data-i18n="hero_title">ستايلك يبدأ<br>من هون</h1>
+    <p data-i18n="hero_desc">مئات القطع المختارة بعناية بأسعار تناسبك، وطلب سهل عبر واتساب بضغطة واحدة.</p>
+    <div class="hero-cta">
+      <a href="#gallery" class="btn-accent" data-i18n="hero_cta1">تسوّق الآن</a>
+      <a href="#deals" class="btn-ghost" data-i18n="hero_cta2">شاهد العروض</a>
+    </div>
+  </div>
+  <div class="hero-media">
+    <img src="female/13.webp"class="female-image" alt="فستان سهرة نبيتي بترتر ودانتيل" onerror="this.src='https://placehold.co/560x680/ffe1ea/d63d6e?font=raleway&text=New+Collection'" onclick="openLightbox(this.src, this.alt)">
+    <div class="hero-tag" data-i18n="hero_tag">الأكثر طلباً 🔥</div>
+  </div>
+</section>
+
+<div class="cat-strip">
+  <button class="cat-tile" data-cat="رجالي">
+    <img src="logo2/men.webp" onerror="this.src='https://placehold.co/160x160/f1eef5/241e2e?text=رجالي'" alt="رجالي">
+    <span data-i18n="cat_men">رجالي</span>
+  </button>
+  <button class="cat-tile" data-cat="حريمي">
+    <img src="logo2/female.webp" onerror="this.src='https://placehold.co/160x160/ffe1ea/d63d6e?text=حريمي'" alt="حريمي">
+    <span data-i18n="cat_women">حريمي</span>
+  </button>
+  <button class="cat-tile" data-cat="أطفال">
+    <img src="logo2/kids.webp" onerror="this.src='https://placehold.co/160x160/eafaf1/1fae7a?text=أطفال'" alt="أطفال">
+    <span data-i18n="cat_kids">أطفال</span>
+  </button>
+  <button class="cat-tile" data-cat="أحذية">
+    <img src="logo2/shoes.webp" onerror="this.src='https://placehold.co/160x160/fff3e0/d68b3d?text=أحذية'" alt="أحذية">
+    <span data-i18n="cat_shoes">أحذية</span>
+  </button>
+  <button class="cat-tile" data-cat="إكسسوارات">
+    <img src="logo2/accessories.webp" onerror="this.src='https://placehold.co/160x160/eaf7f1/1fae7a?text=إكسسوارات'" alt="إكسسوارات">
+    <span data-i18n="cat_acc">إكسسوارات</span>
+  </button>
+</div>
+
+<div class="promo-strip" id="deals">
+  <div class="promo-card"><b data-i18n="promo1_t">خصم يصل إلى ٤٠٪</b><span data-i18n="promo1_d">على القطع المختارة هذا الأسبوع</span></div>
+  <div class="promo-card"><b data-i18n="promo2_t">اشترِ ٢ واحصل على الثالثة هدية</b><span data-i18n="promo2_d">على تشكيلة الإكسسوارات</span></div>
+  <div class="promo-card"><b data-i18n="promo3_t">توصيل مجاني</b><span data-i18n="promo3_d">للطلبات فوق ٥٠$</span></div>
+</div>
+
+<section class="section" id="gallery">
+  <div class="section-head">
+    <div class="eyebrow" data-i18n="gal_eyebrow">المعرض</div>
+    <h2 class="display" data-i18n="gal_title">اكتشف تشكيلتنا</h2>
+  </div>
+
+  <div class="toolbar">
+    <div class="filters" id="filters"></div>
+    <div class="toolbar-right">
+      <select class="sort-select" id="sortSelect" onchange="renderGallery()">
+        <option value="default" data-i18n="sort_default">الترتيب: افتراضي</option>
+        <option value="price-asc" data-i18n="sort_asc">السعر: من الأقل للأعلى</option>
+        <option value="price-desc" data-i18n="sort_desc">السعر: من الأعلى للأقل</option>
+      </select>
+    </div>
+  </div>
+  <div class="subfilters" id="subfilters"></div>
+
+  <div class="gallery" id="gallery-grid"></div>
+</section>
+
+<section class="signature" id="about">
+  <h2 class="display" data-i18n="sig_title">ستايلك، قرارك</h2>
+  <p data-i18n="sig_desc">في ستايل روج منختار كل قطعة بعين تهتم بالتفاصيل، ونوصلها لباب بيتك بأسهل طريقة. جودة تستمر، وأسعار تناسب الكل.</p>
+</section>
+
+<footer id="contact">
+  <div class="footer-grid">
+    <div>
+      <h4 data-i18n="footer_brand">ستايل روج</h4>
+      <p data-i18n="footer_brand_desc">تسوّق أزياء رجالي، حريمي، وبناتي بأسلوب عصري وخدمة طلب مباشرة عبر واتساب.</p>
+    </div>
+    <div>
+      <h4 data-i18n="footer_links">روابط سريعة</h4>
+      <a href="#gallery" data-i18n="nav_shop">تسوّق</a><br>
+      <a href="#deals" data-i18n="nav_deals">عروض</a><br>
+      <a href="#about" data-i18n="nav_about">من نحن</a>
+    </div>
+    <div>
+      <h4 data-i18n="footer_contact">تواصل معنا</h4>
+      <p><span data-i18n="footer_wa">واتساب:</span></p>
+      <p>🇮🇶 <a href="https://wa.me/9647511429970" target="_blank">+964 751 1429970</a> — <span data-i18n="footer_country">العراق</span></p>
+      <p>🇸🇾 <a href="https://wa.me/963984959066" target="_blank">+963 984 959066</a> — <span data-i18n="footer_country2">سوريا</span></p>
+      <p><span data-i18n="footer_owner">المالك:</span> .....</p>
+      <p><span data-i18n="footer_admin">المسؤول  :</span> .....</p>
+    </div>
+  </div>
+  <div class="footer-bottom" data-i18n="footer_bottom">© 2026 ستايل روج – جميع الحقوق محفوظة</div>
+</footer>
+
+<div class="img-lightbox" id="imgLightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightboxImg" src="" alt="" onclick="event.stopPropagation()">
+</div>
+
+<div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
+<div class="cart-drawer" id="cartDrawer">
+  <div class="cart-head">
+    <h3 data-i18n="cart_title">سلة المشتريات</h3>
+    <button class="cart-close" onclick="closeCart()">✕</button>
+  </div>
+  <div class="cart-items" id="cartItems"></div>
+  <div class="cart-footer">
+    <div class="cart-total-row"><span data-i18n="cart_total">الإجمالي</span><span id="cartTotal">0$</span></div>
+    <div class="country-select" id="countrySelect">
+      <button class="country-opt active" data-country="iq">🇮🇶 <span data-i18n="country_iq">العراق</span></button>
+      <button class="country-opt" data-country="sy">🇸🇾 <span data-i18n="country_sy">سوريا</span></button>
+    </div>
+    <button class="wa-btn" id="waBtn" onclick="sendWhatsAppOrder()">
+      <span>📲</span><span data-i18n="cart_wa_btn">إرسال الطلب عبر واتساب</span>
+    </button>
+    <div class="cart-note" data-i18n="cart_note">سيتم فتح واتساب مع تفاصيل الفاتورة وروابط صور القطع المختارة لتأكيد الطلب.</div>
+  </div>
+</div>
+
+<div class="service-modal" id="serviceModal" onclick="closeServiceModal()">
+  <div class="service-modal-box" onclick="event.stopPropagation()">
+    <div class="service-modal-icon">🚧</div>
+    <h3 data-i18n="service_off_title">الخدمة متوقفة مؤقتاً</h3>
+    <p data-i18n="service_off_msg">هذه صفحة تجريبية، وقريباً رح توفر جميع الخدمات.</p>
+    <button class="btn-accent" onclick="closeServiceModal()" data-i18n="service_off_ok">تم</button>
+  </div>
+</div>
+
+<!-- نافذة الإعدادات -->
+<div class="settings-modal" id="settingsModal" onclick="closeSettingsModal()">
+  <div class="settings-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="settings_title">الإعدادات</h3>
+      <button class="lightbox-close cam-close" onclick="closeSettingsModal()">✕</button>
+    </div>
+    <button class="settings-row" onclick="openLanguageModal()">
+      <span class="settings-row-label">🌐 <span data-i18n="settings_language">اللغة</span></span>
+      <span class="settings-row-right"><span class="settings-row-value" id="currentLangLabel">AR</span><span class="settings-row-arrow">‹</span></span>
+    </button>
+  </div>
+</div>
+
+<!-- نافذة اختيار اللغة -->
+<div class="language-modal" id="languageModal" onclick="closeLanguageModal()">
+  <div class="settings-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="settings_language">اللغة</h3>
+      <button class="lightbox-close cam-close" onclick="closeLanguageModal()">✕</button>
+    </div>
+    <button class="lang-option" data-lang="ar" onclick="selectLanguageOption('ar')"><span>العربية</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="en" onclick="selectLanguageOption('en')"><span>English</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="ku" onclick="selectLanguageOption('ku')"><span>Kurd</span><span class="lang-check">✓</span></button>
+    <button class="lang-option" data-lang="tr" onclick="selectLanguageOption('tr')"><span>Türkçe</span><span class="lang-check">✓</span></button>
+  </div>
+</div>
+
+<!-- نافذة تواصل معنا (واتساب + انستغرام) -->
+<div class="contact-modal" id="contactModal" onclick="closeContactModal()">
+  <div class="contact-modal-box" onclick="event.stopPropagation()">
+    <button class="lightbox-close cam-close" onclick="closeContactModal()" style="float:left">✕</button>
+    <h3 data-i18n="contact_title">تواصل معنا</h3>
+<div class="contact-group">
+  <div class="contact-group-title">
+    <img src="logo2/whatsapp.png" class="contact-title-icon" alt="واتساب">
+    <span data-i18n="contact_wa_group">واتساب</span>
+  </div>
+
+<a class="contact-link wa" href="https://wa.me/9647511429970" target="_blank" rel="noopener">
+  <img src="logo2/whatsapp.png" class="contact-logo" alt="العراق">
+  <span data-i18n="footer_country">العراق</span> — 751 1429970
+</a>
+
+<a class="contact-link wa" href="https://wa.me/963984959066" target="_blank" rel="noopener">
+  <img src="logo2/whatsapp.png" class="contact-logo" alt="سوريا">
+  <span data-i18n="footer_country2">سوريا</span> — 984 959066
+</a>
+</div>
+<div class="contact-group">
+  <div class="contact-group-title">
+    <img src="logo2/instagram.png" class="contact-title-icon" alt="انستغرام">
+    <span data-i18n="contact_ig_group">انستغرام</span>
+  </div>
+
+  <a class="contact-link ig" href="https://www.instagram.com/awar.teter/" target="_blank" rel="noopener">
+    <img src="logo2/instagram.png" class="contact-logo" alt="حساب دعم فني">
+    <span data-i18n="contact_ig_iq">حساب دعم فني</span>
+  </a>
+
+  <a class="contact-link ig" href="https://www.instagram.com/style__roj/" target="_blank" rel="noopener">
+    <img src="logo2/instagram.png" class="contact-logo" alt="حساب style_roj">
+    <span data-i18n="contact_ig_sy">حساب style_roj</span>
+  </a>
+</div>
+  </div>
+</div>
+
+<!-- نافذة البحث بالصورة (كاميرا) -->
+<div class="camera-modal" id="cameraModal" onclick="closeCameraModal()">
+  <div class="camera-modal-box" onclick="event.stopPropagation()">
+    <div class="camera-modal-head">
+      <h3 data-i18n="camera_title">🔎 دوّر بالصورة</h3>
+      <button class="lightbox-close cam-close" onclick="closeCameraModal()">✕</button>
+    </div>
+    <p class="camera-hint" data-i18n="camera_hint">صوّر القطعة أو ارفع صورتها، ورح نلقالك أقرب القطع الموجودة بمتجرنا. (مطابقة تقريبية حسب الألوان والشكل العام)</p>
+    <div class="camera-upload-row">
+      <label class="camera-upload-btn">
+        📷 <span data-i18n="camera_take">التقاط صورة</span>
+        <input type="file" accept="image/*" capture="environment" id="cameraCaptureInput" onchange="handleCameraFile(this.files[0])">
+      </label>
+      <label class="camera-upload-btn secondary">
+        🖼️ <span data-i18n="camera_upload">رفع من المعرض</span>
+        <input type="file" accept="image/*" id="cameraUploadInput" onchange="handleCameraFile(this.files[0])">
+      </label>
+    </div>
+    <div class="camera-preview" id="cameraPreview"></div>
+    <div class="camera-status" id="cameraStatus"></div>
+    <div class="camera-results" id="cameraResults"></div>
+  </div>
+</div>
+<canvas id="visionCanvas" width="8" height="8" style="display:none"></canvas>
+<script>
+let lastScrollY = window.scrollY;
+
+window.addEventListener("scroll", () => {
+  const nav = document.querySelector(".bottom-nav");
+  if (!nav) return;
+
+  if (window.scrollY > lastScrollY && window.scrollY > 80) {
+    nav.classList.add("nav-hidden");
+  } else {
+    nav.classList.remove("nav-hidden");
+  }
+
+  lastScrollY = window.scrollY;
+});
+</script>
+<!-- شريط تنقّل سفلي (موبايل) -->
+<div class="bottom-nav">
+
+<button class="bnav-btn" onclick="openContactModal()">
+  <span class="bnav-icon">
+    <img src="logo2/contact.png" alt="تواصل">
+  </span>
+</button>
+<button class="bnav-btn" onclick="scrollToTop()">
+  <span class="bnav-icon">
+    <img src="logo2/home.png" alt="الرئيسية">
+  </span>
+</button>
+<button class="bnav-btn bnav-camera" onclick="openCameraModal()">
+  <span class="bnav-icon">
+    <img src="logo2/camera.png" alt="بحث بالصورة">
+  </span>
+</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
