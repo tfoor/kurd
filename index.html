@@ -62,107 +62,92 @@ nav button.on{background:var(--g2);color:var(--gd);font-weight:600}
 <div class="toast" id="toast"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
-var D=86400000,now=Date.now();
+var D=86400000;
 var SUPABASE_URL='https://vrqedyvgtqwtrjhvogrw.supabase.co',SUPABASE_KEY='sb_publishable_JoH_9C2OdeOjk3hKe1oxBQ_ZlA_d1pR';
 var db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-var S={fam:'',fund:0,m:[],log:[],debts:[],goals:[]};
-async function load(){
-var f=await db.from('families').select('*').maybeSingle();if(!f.data)return false;
-var q=function(t,o){return db.from(t).select('*').order(o,{ascending:true})};
-var r=await Promise.all([q('members','created_at'),q('ops','id'),q('debts','id'),q('goals','id')]);
-S.fam=f.data.name;S.fund=+f.data.fund;
-S.m=(r[0].data||[]).map(function(x){return{n:x.name,b:+x.balance}});
-S.log=(r[1].data||[]).map(function(x){return{t:x.t,who:x.who,amt:+x.amt,txt:x.txt||x.cat||'',cat:x.cat||'',ts:new Date(x.ts).getTime()}});
-S.debts=(r[2].data||[]).map(function(x){return{id:x.id,debtor:x.debtor,cred:x.cred,amt:+x.amt,paid:+x.paid,ts:new Date(x.ts).getTime()}});
-S.goals=(r[3].data||[]).map(function(x){return{id:x.id,n:x.name,tg:+x.target,sv:+x.saved}});
-return true}
-async function run(p,el){var r=await p;if(r.error){el.textContent=/check constraint/.test(r.error.message)?'الرصيد غير كافٍ':r.error.message;return false}await load();render();return true}
-function show(on){$('fab').style.display=on?'':'none';document.querySelector('nav').style.display=on?'':'none'}
-async function boot(){var s=await db.auth.getSession();if(!s.data.session){authUI();return}if(await load()){show(true);render()}else famUI()}
-function authUI(){show(false);$('main').innerHTML='<div class="top"><h1>مصروف البيت</h1></div><div class="card"><button class="p" style="width:100%;padding:12px" onclick="gl()">الدخول بحساب Google</button><div class="sub" style="text-align:center;margin-top:10px">أو بالبريد الإلكتروني</div><label>البريد الإلكتروني</label><input id="em" type="email" autocomplete="email"><label>كلمة المرور</label><input id="pw" type="password" autocomplete="current-password"><div class="err" id="ae"></div><div class="mini"><button class="p" style="flex:1" onclick="auth(1)">دخول</button><button style="flex:1" onclick="auth(0)">حساب جديد</button></div></div>'}
-async function auth(login){var e=$('ae'),c={email:$('em').value.trim(),password:$('pw').value};
-if(!c.email||c.password.length<6){e.style.color='';e.textContent='أدخل بريداً صحيحاً وكلمة مرور من 6 أحرف على الأقل';return}
-e.style.color='var(--tx2)';e.textContent=login?'جارٍ الدخول...':'جارٍ إنشاء الحساب...';
-try{var r=login?await db.auth.signInWithPassword(c):await db.auth.signUp(c);
-if(r.error){e.style.color='';e.textContent=r.error.message;return}
-if(!r.data.session){e.style.color='';e.textContent=(!login&&r.data.user&&r.data.user.identities&&!r.data.user.identities.length)?'هذا البريد مسجل مسبقاً، اضغط دخول أو استخدم Google':'تم إنشاء الحساب. افتح رسالة التأكيد في بريدك (وتحقق من Spam) ثم اضغط دخول';return}
-boot()}catch(x){e.style.color='';e.textContent='تعذر الاتصال: '+x.message}}
-async function gl(){var r=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(r.error)$('ae').textContent=r.error.message}
-function famUI(){show(false);$('main').innerHTML='<div class="top"><h1>إنشاء حساب العائلة</h1></div><div class="card"><label>اسم العائلة</label><input id="fn" placeholder="عائلة أبو أحمد"><label>اسمك</label><input id="mn" placeholder="الأب"><div class="err" id="fe"></div><button class="p" style="width:100%;margin-top:8px" onclick="mk()">إنشاء</button><button style="width:100%;margin-top:8px" onclick="out()">تسجيل الخروج</button></div>'}
-async function mk(){var a=$('fn').value.trim(),b=$('mn').value.trim();if(!a||!b){$('fe').textContent='أدخل اسم العائلة واسمك';return}
-var r=await db.rpc('create_family',{p_fam:a,p_me:b});if(r.error){$('fe').textContent=r.error.message;return}boot()}
-async function out(){await db.auth.signOut();boot()}
+var S={fam:'',fundIQD:0,fundUSD:0,m:[],log:[],debts:[],goals:[]};
 var cats=['طعام','كهرباء وماء','إنترنت','إيجار','أدوية','صيانة','مواصلات','أخرى'];
 var types={income:'إضافة دخل',expense:'تسجيل مصروف',withdraw:'سحب من الصندوق',transfer:'تحويل بين الأفراد',debt:'تسجيل دين',goal:'ادخار لهدف'};
-var pg='home',per='month',ft='all',typ='expense';
+var pg='home',per='month',ft='all',typ='expense',currency='IQD';
 var pages=[['home','الرئيسية','M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z'],['fam','العائلة','M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M17 3a4 4 0 0 1 0 8M22 21v-1a6 6 0 0 0-4-5.6'],['debt','الديون','M3 7h18v12H3zM3 11h18M7 15h3'],['rep','التقارير','M4 20V10M10 20V4M16 20v-7M22 20H2'],['log','السجل','M5 4h14v16H5zM9 9h6M9 13h6M9 17h3']];
 function $(i){return document.getElementById(i)}
-function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function f(n){return Math.round(n).toLocaleString('en-US')}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function f(n){return Math.round(Number(n)||0).toLocaleString('en-US')}
+function money(n,c){return c==='USD'?'$'+f(n):f(n)+' د.ع'}
+function currName(c){return c==='USD'?'دولار أمريكي':'دينار عراقي'}
 function mem(n){return S.m.filter(function(x){return x.n===n})[0]}
 function dt(ts){var d=new Date(ts);return d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()}
 function toast(t){var e=$('toast');e.textContent=t;e.style.display='block';setTimeout(function(){e.style.display='none'},2200)}
 function ico(p){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="'+p+'"/></svg>'}
-function opts(a){return a.map(function(x){return '<option>'+esc(x)+'</option>'}).join('')}
+function opts(a){return a.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>'}).join('')}
 function names(){return S.m.map(function(x){return x.n})}
-function ent(e){var s=e.t==='income'?'+':(e.t==='transfer'||e.t==='debt'?'':'-');var c=e.t==='income'?'pos':(e.t==='expense'||e.t==='debtpay'?'neg':'');
-var lb={income:'دخل',expense:'مصروف',withdraw:'سحب',transfer:'تحويل',debt:'دين',debtpay:'تسديد',goal:'ادخار'}[e.t];
-return '<div class="item"><div class="av">'+esc((e.who||'؟').charAt(0))+'</div><div class="grow"><b>'+esc(e.txt)+'</b><div class="sub">'+esc(e.who)+' · '+dt(e.ts)+'</div></div><div style="text-align:left"><b class="'+c+'">'+s+f(e.amt)+'</b><div><span class="tag">'+lb+'</span></div></div></div>'}
-function sum(t,from){return S.log.filter(function(e){return e.t===t&&e.ts>=from}).reduce(function(a,e){return a+e.amt},0)}
-function owed(){return S.debts.reduce(function(a,d){return a+d.amt-d.paid},0)}
-function home(){var inc=sum('income',0),exp=sum('expense',0)+S.log.filter(function(e){return e.t==='debtpay'}).reduce(function(a,e){return a+e.amt},0);
-var h='<div class="hero"><small>رصيد صندوق البيت</small><div class="big">'+f(S.fund)+' د.ع</div><div class="row"><small>'+S.m.length+' أفراد في العائلة</small><small>آخر تحديث: اليوم</small></div></div>';
-h+='<div class="grid"><div class="m"><small>إجمالي الدخل</small><b class="pos">'+f(inc)+'</b></div><div class="m"><small>إجمالي المصروفات</small><b class="neg">'+f(exp)+'</b></div><div class="m"><small>الديون المستحقة</small><b>'+f(owed())+'</b></div><div class="m"><small>مصروف اليوم</small><b>'+f(sum('expense',new Date().setHours(0,0,0,0)))+'</b></div></div>';
-h+='<h2>أرصدة الأفراد</h2><div class="card">'+S.m.map(function(x){return '<div class="item"><div class="av">'+esc(x.n.charAt(0))+'</div><div class="grow"><b>'+esc(x.n)+'</b></div><b>'+f(x.b)+'</b></div>'}).join('')+'</div>';
-h+='<h2>آخر العمليات</h2><div class="card">'+S.log.slice(-4).reverse().map(ent).join('')+'</div>';return h}
-function fam(){var h='<h2>أفراد العائلة</h2>'+S.m.map(function(x){return '<div class="card row"><div class="row" style="gap:10px"><div class="av">'+esc(x.n.charAt(0))+'</div><div><b>'+esc(x.n)+'</b><div class="sub">الرصيد الشخصي</div></div></div><b class="pos">'+f(x.b)+' د.ع</b></div>'}).join('');
-h+='<div class="card"><label>إضافة فرد جديد</label><div class="mini"><input id="nm" placeholder="الاسم الكامل"><button class="p" onclick="addM()">إضافة</button></div><div class="err" id="e2"></div></div>';
-h+='<button class="p" style="width:100%" onclick="openSh(\'transfer\')">تحويل بين الأفراد</button><button style="width:100%;margin-top:8px" onclick="out()">تسجيل الخروج</button>';return h}
+function getFund(c){return c==='USD'?S.fundUSD:S.fundIQD}
+function sum(t,from,c){return S.log.filter(function(e){return e.t===t&&e.ts>=from&&e.currency===c}).reduce(function(a,e){return a+e.amt},0)}
+function owed(c){return S.debts.filter(function(d){return d.currency===c}).reduce(function(a,d){return a+d.amt-d.paid},0)}
+async function load(){
+ var f0=await db.from('families').select('*').maybeSingle();if(f0.error)throw f0.error;if(!f0.data)return false;
+ var q=function(t,o){return db.from(t).select('*').order(o,{ascending:true})};
+ var r=await Promise.all([q('members','created_at'),q('ops','id'),q('debts','id'),q('goals','id')]);
+ for(var i=0;i<r.length;i++){if(r[i].error)throw r[i].error}
+ S.fam=f0.data.name;S.fundIQD=+f0.data.fund;S.fundUSD=+(f0.data.fund_usd||0);
+ S.m=(r[0].data||[]).map(function(x){return{n:x.name,iqd:+x.balance,usd:+(x.balance_usd||0)}});
+ S.log=(r[1].data||[]).map(function(x){return{t:x.t,who:x.who,amt:+x.amt,txt:x.txt||x.cat||'',cat:x.cat||'',currency:x.currency||'IQD',ts:new Date(x.ts).getTime()}});
+ S.debts=(r[2].data||[]).map(function(x){return{id:x.id,debtor:x.debtor,cred:x.cred,amt:+x.amt,paid:+x.paid,currency:x.currency||'IQD',ts:new Date(x.ts).getTime()}});
+ S.goals=(r[3].data||[]).map(function(x){return{id:x.id,n:x.name,tg:+x.target,sv:+x.saved,currency:x.currency||'IQD'}});
+ return true;
+}
+async function run(p,el){var r=await p;if(r.error){if(el)el.textContent=/check constraint|violates check constraint|numeric field overflow/i.test(r.error.message)?'الرصيد غير كافٍ أو المبلغ غير صالح':r.error.message;return false}try{await load()}catch(x){if(el)el.textContent='تم الحفظ، لكن تعذر تحديث البيانات: '+x.message;return false}render();return true}
+function show(on){$('fab').style.display=on?'':'none';document.querySelector('nav').style.display=on?'':'none'}
+async function boot(){try{var s=await db.auth.getSession();if(!s.data.session){authUI();return}if(await load()){show(true);render()}else famUI()}catch(e){show(false);$('main').innerHTML='<div class="card"><b>تعذر تحميل البيانات</b><div class="err">'+esc(e.message)+'</div><button class="p" onclick="boot()">إعادة المحاولة</button></div>'}}
+function authUI(){show(false);$('main').innerHTML='<div class="top"><h1>مصروف البيت</h1></div><div class="card"><button class="p" style="width:100%;padding:12px" onclick="gl()">الدخول بحساب Google</button><div class="sub" style="text-align:center;margin-top:10px">أو بالبريد الإلكتروني</div><label>البريد الإلكتروني</label><input id="em" type="email" autocomplete="email"><label>كلمة المرور</label><input id="pw" type="password" autocomplete="current-password"><div class="err" id="ae"></div><div class="mini"><button class="p" style="flex:1" onclick="auth(1)">دخول</button><button style="flex:1" onclick="auth(0)">حساب جديد</button></div></div>'}
+async function auth(login){var e=$('ae'),c={email:$('em').value.trim(),password:$('pw').value};
+ if(!c.email||c.password.length<6){e.style.color='';e.textContent='أدخل بريداً صحيحاً وكلمة مرور من 6 أحرف على الأقل';return}
+ e.style.color='var(--tx2)';e.textContent=login?'جارٍ الدخول...':'جارٍ إنشاء الحساب...';
+ try{var r=login?await db.auth.signInWithPassword(c):await db.auth.signUp(c);if(r.error){e.style.color='';e.textContent=r.error.message;return}if(!r.data.session){e.style.color='';e.textContent=(!login&&r.data.user&&r.data.user.identities&&!r.data.user.identities.length)?'هذا البريد مسجل مسبقاً، اضغط دخول أو استخدم Google':'تم إنشاء الحساب. افتح رسالة التأكيد في بريدك (وتحقق من Spam) ثم اضغط دخول';return}boot()}catch(x){e.style.color='';e.textContent='تعذر الاتصال: '+x.message}}
+async function gl(){var r=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(r.error)$('ae').textContent=r.error.message}
+function famUI(){show(false);$('main').innerHTML='<div class="top"><h1>إنشاء حساب العائلة</h1></div><div class="card"><label>اسم العائلة</label><input id="fn" placeholder="عائلة أبو أحمد"><label>اسمك</label><input id="mn" placeholder="الأب"><div class="err" id="fe"></div><button class="p" style="width:100%;margin-top:8px" onclick="mk()">إنشاء</button><button style="width:100%;margin-top:8px" onclick="out()">تسجيل الخروج</button></div>'}
+async function mk(){var a=$('fn').value.trim(),b=$('mn').value.trim();if(!a||!b){$('fe').textContent='أدخل اسم العائلة واسمك';return}var r=await db.rpc('create_family',{p_fam:a,p_me:b});if(r.error){$('fe').textContent=r.error.message;return}boot()}
+async function out(){await db.auth.signOut();boot()}
+function ent(e){var s=e.t==='income'?'+':(e.t==='transfer'||e.t==='debt'?'':'-');var c=e.t==='income'?'pos':(e.t==='expense'||e.t==='debtpay'?'neg':'');var lb={income:'دخل',expense:'مصروف',withdraw:'سحب',transfer:'تحويل',debt:'دين',debtpay:'تسديد',goal:'ادخار'}[e.t]||e.t;
+ return '<div class="item"><div class="av">'+esc((e.who||'؟').charAt(0))+'</div><div class="grow"><b>'+esc(e.txt)+'</b><div class="sub">'+esc(e.who)+' · '+dt(e.ts)+'</div></div><div style="text-align:left;white-space:nowrap"><b class="'+c+'">'+s+money(e.amt,e.currency)+'</b><div><span class="tag">'+lb+'</span></div></div></div>'}
+function home(){var today=new Date();today.setHours(0,0,0,0);var from=today.getTime();var h='<div class="hero"><small>صندوق البيت · الرصيد المتوفر</small><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px"><div><small>دينار عراقي</small><div class="big" style="font-size:25px">'+money(S.fundIQD,'IQD')+'</div></div><div><small>دولار أمريكي</small><div class="big" style="font-size:25px">'+money(S.fundUSD,'USD')+'</div></div></div><div class="row"><small>'+S.m.length+' أفراد في العائلة</small><small>صندوق مستقل عن الأرصدة الشخصية</small></div></div>';
+ ['IQD','USD'].forEach(function(c){var inc=sum('income',0,c),exp=sum('expense',0,c)+sum('debtpay',0,c),todayExp=sum('expense',from,c);h+='<h2>'+currName(c)+'</h2><div class="grid"><div class="m"><small>إجمالي الدخل</small><b class="pos">'+money(inc,c)+'</b></div><div class="m"><small>إجمالي المصروفات والتسديد</small><b class="neg">'+money(exp,c)+'</b></div><div class="m"><small>الديون المستحقة</small><b>'+money(owed(c),c)+'</b></div><div class="m"><small>مصروف اليوم</small><b>'+money(todayExp,c)+'</b></div></div>'});
+ h+='<h2>الأرصدة الشخصية</h2><div class="card">'+S.m.map(function(x){return '<div class="item"><div class="av">'+esc(x.n.charAt(0))+'</div><div class="grow"><b>'+esc(x.n)+'</b><div class="sub">الرصيد الشخصي</div></div><div style="text-align:left"><b>'+money(x.iqd,'IQD')+'</b><div class="sub">'+money(x.usd,'USD')+'</div></div></div>'}).join('')+'</div>';
+ h+='<h2>آخر العمليات</h2><div class="card">'+(S.log.length?S.log.slice(-4).reverse().map(ent).join(''):'<div class="sub">لا توجد عمليات بعد.</div>')+'</div>';return h}
+function fam(){var h='<h2>أرصدة أفراد العائلة</h2>'+S.m.map(function(x){return '<div class="card"><div class="row"><div class="row" style="gap:10px"><div class="av">'+esc(x.n.charAt(0))+'</div><div><b>'+esc(x.n)+'</b><div class="sub">الرصيد الشخصي</div></div></div><span class="tag">حساب مستقل</span></div><div class="grid" style="margin:12px 0 0"><div class="m"><small>دينار عراقي</small><b>'+money(x.iqd,'IQD')+'</b></div><div class="m"><small>دولار أمريكي</small><b>'+money(x.usd,'USD')+'</b></div></div></div>'}).join('');
+ h+='<div class="card"><label>إضافة فرد جديد</label><div class="mini"><input id="nm" placeholder="الاسم الكامل"><button class="p" onclick="addM()">إضافة</button></div><div class="err" id="e2"></div></div>';
+ h+='<button class="p" style="width:100%" onclick="openSh(\'transfer\')">تحويل بين الأفراد</button><button style="width:100%;margin-top:8px" onclick="out()">تسجيل الخروج</button>';return h}
 async function addM(){var v=$('nm').value.trim(),e=$('e2');if(!v){e.textContent='اكتب اسم الفرد أولاً';return}if(mem(v)){e.textContent='هذا الاسم موجود';return}if(await run(db.rpc('add_member',{p_nm:v}),e))toast('تمت إضافة '+v)}
-function debt(){var op=S.debts.filter(function(d){return d.paid<d.amt}),cl=S.debts.filter(function(d){return d.paid>=d.amt});
-var h='<div class="grid"><div class="m"><small>إجمالي المستحق</small><b class="neg">'+f(owed())+'</b></div><div class="m"><small>ديون مدفوعة</small><b class="pos">'+f(S.debts.reduce(function(a,d){return a+d.paid},0))+'</b></div></div><h2>ديون مستحقة</h2>';
-h+=op.length?op.map(function(d){var r=d.amt-d.paid,src=mem(d.debtor)?d.debtor:'الصندوق';
-return '<div class="card"><div class="row"><b>'+esc(d.debtor)+' ← '+esc(d.cred)+'</b><span class="tag a">متبقي '+f(r)+'</span></div><div class="sub">الأصل '+f(d.amt)+' · مدفوع '+f(d.paid)+' · '+dt(d.ts)+'</div><div class="bar"><i style="width:'+Math.round(d.paid/d.amt*100)+'%"></i></div><div class="mini"><input type="number" inputmode="numeric" id="pa'+d.id+'" placeholder="المبلغ"><select id="ps'+d.id+'" style="width:120px"><option'+(src==='الصندوق'?' selected':'')+'>الصندوق</option>'+S.m.map(function(x){return '<option'+(src===x.n?' selected':'')+'>'+esc(x.n)+'</option>'}).join('')+'</select><button class="p" onclick="pay('+d.id+')">تسديد</button></div><div class="err" id="pe'+d.id+'"></div></div>'}).join(''):'<div class="card sub">لا توجد ديون مستحقة.</div>';
-h+='<h2>ديون سابقة</h2>'+(cl.length?cl.map(function(d){return '<div class="card row"><b>'+esc(d.debtor)+' ← '+esc(d.cred)+'</b><span class="tag">تم دفع الدين</span></div>'}).join(''):'<div class="card sub">لا توجد ديون مسددة بعد.</div>');
-return h+'<button class="p" style="width:100%" onclick="openSh(\'debt\')">تسجيل دين جديد</button>'}
-async function pay(id){var d=S.debts.filter(function(x){return x.id===id})[0],a=+$('pa'+id).value,e=$('pe'+id);
-if(!(a>0)){e.textContent='أدخل مبلغاً صحيحاً';return}if(a>d.amt-d.paid){e.textContent='المبلغ أكبر من المتبقي ('+f(d.amt-d.paid)+')';return}
-if(await run(db.rpc('pay_debt',{p_id:id,p_amt:a,p_src:$('ps'+id).value}),e))toast('تم التسديد')}
-function rep(){var from=Date.now()-{day:1,week:7,month:30,year:365}[per]*D,ex=S.log.filter(function(e){return e.t==='expense'&&e.ts>=from}),tot=ex.reduce(function(a,e){return a+e.amt},0),inc=sum('income',from),by={},who={};
-ex.forEach(function(e){by[e.cat]=(by[e.cat]||0)+e.amt;who[e.who]=(who[e.who]||0)+e.amt});
-function bars(o){var k=Object.keys(o).sort(function(a,b){return o[b]-o[a]});return k.length?k.map(function(x){return '<div style="margin-bottom:10px"><div class="row"><span>'+esc(x)+'</span><b>'+f(o[x])+'</b></div><div class="bar"><i style="width:'+Math.round(o[x]/tot*100)+'%"></i></div></div>'}).join(''):'<div class="sub">لا توجد مصروفات في هذه الفترة.</div>'}
-var h='<div class="chips">'+[['day','اليوم'],['week','الأسبوع'],['month','الشهر'],['year','السنة']].map(function(p){return '<button class="'+(per===p[0]?'on':'')+'" onclick="per=\''+p[0]+'\';render()">'+p[1]+'</button>'}).join('')+'</div>';
-h+='<div class="grid"><div class="m"><small>الدخل</small><b class="pos">'+f(inc)+'</b></div><div class="m"><small>المصروفات</small><b class="neg">'+f(tot)+'</b></div></div><div class="m" style="margin-bottom:10px"><small>المتبقي</small><b>'+f(inc-tot)+'</b></div>';
-h+='<h2>حسب نوع المصروف</h2><div class="card">'+bars(by)+'</div><h2>حسب الفرد</h2><div class="card">'+bars(who)+'</div><h2>أهداف الادخار</h2>';
-h+=S.goals.map(function(g,i){var p=Math.min(100,Math.round(g.sv/g.tg*100));return '<div class="card"><div class="row"><b>'+esc(g.n)+'</b><span class="tag">'+p+'%</span></div><div class="bar"><i style="width:'+p+'%"></i></div><div class="sub" style="margin-top:6px">'+f(g.sv)+' من '+f(g.tg)+' · المتبقي '+f(Math.max(0,g.tg-g.sv))+'</div></div>'}).join('');
-h+='<div class="card"><label>هدف جديد</label><div class="mini"><input id="gn" placeholder="مثال: السفر"><input id="gt" type="number" inputmode="numeric" placeholder="المبلغ"></div><button class="p" style="margin-top:8px;width:100%" onclick="addG()">إنشاء هدف</button><div class="err" id="e3"></div></div>';return h}
-async function addG(){var n=$('gn').value.trim(),t=+$('gt').value,e=$('e3');if(!n||!(t>0)){e.textContent='أدخل اسم الهدف ومبلغاً صحيحاً';return}if(await run(db.rpc('add_goal',{p_n:n,p_t:t}),e))toast('تم إنشاء الهدف')}
-function lg(){var l=S.log.slice().reverse().filter(function(e){return ft==='all'||e.t===ft});
-var h='<div class="chips">'+[['all','الكل'],['income','دخل'],['expense','مصروف'],['withdraw','سحب'],['transfer','تحويل'],['debt','دين'],['debtpay','تسديد'],['goal','ادخار']].map(function(p){return '<button class="'+(ft===p[0]?'on':'')+'" onclick="ft=\''+p[0]+'\';render()">'+p[1]+'</button>'}).join('')+'</div>';
-return h+'<div class="card">'+(l.length?l.map(ent).join(''):'<div class="sub">لا توجد عمليات من هذا النوع.</div>')+'</div>'}
-function render(){var t={home:'مصروف البيت',fam:'العائلة',debt:'الديون',rep:'التقارير',log:'سجل العمليات'};
-$('main').innerHTML='<div class="top"><h1>'+t[pg]+'</h1><span class="tag">'+esc(S.fam)+'</span></div>'+({home:home,fam:fam,debt:debt,rep:rep,log:lg})[pg]();
-$('nav').innerHTML=pages.map(function(p){return '<button class="'+(pg===p[0]?'on':'')+'" onclick="pg=\''+p[0]+'\';render();scrollTo(0,0)">'+ico(p[2])+p[1]+'</button>'}).join('')}
+function debt(){var op=S.debts.filter(function(d){return d.paid<d.amt}),cl=S.debts.filter(function(d){return d.paid>=d.amt});var h='<h2>ملخص الديون</h2><div class="grid"><div class="m"><small>المستحق بالدينار</small><b class="neg">'+money(owed('IQD'),'IQD')+'</b></div><div class="m"><small>المستحق بالدولار</small><b class="neg">'+money(owed('USD'),'USD')+'</b></div></div><h2>ديون مستحقة</h2>';
+ h+=op.length?op.map(function(d){var r=d.amt-d.paid,src=mem(d.debtor)?d.debtor:'الصندوق';return '<div class="card"><div class="row"><b>'+esc(d.debtor)+' ← '+esc(d.cred)+'</b><span class="tag a">متبقي '+money(r,d.currency)+'</span></div><div class="sub">الأصل '+money(d.amt,d.currency)+' · مدفوع '+money(d.paid,d.currency)+' · '+dt(d.ts)+'</div><div class="bar"><i style="width:'+Math.min(100,Math.round(d.paid/d.amt*100))+'%"></i></div><div class="mini"><input type="number" inputmode="decimal" id="pa'+d.id+'" placeholder="المبلغ"><select id="ps'+d.id+'" style="width:120px"><option'+(src==='الصندوق'?' selected':'')+'>الصندوق</option>'+S.m.map(function(x){return '<option'+(src===x.n?' selected':'')+'>'+esc(x.n)+'</option>'}).join('')+'</select><button class="p" onclick="pay('+d.id+')">تسديد</button></div><div class="err" id="pe'+d.id+'"></div></div>'}).join(''):'<div class="card sub">لا توجد ديون مستحقة.</div>';
+ h+='<h2>ديون سابقة</h2>'+(cl.length?cl.map(function(d){return '<div class="card row"><div><b>'+esc(d.debtor)+' ← '+esc(d.cred)+'</b><div class="sub">'+money(d.amt,d.currency)+' · '+dt(d.ts)+'</div></div><span class="tag">تم دفع الدين</span></div>'}).join(''):'<div class="card sub">لا توجد ديون مسددة بعد.</div>');
+ return h+'<button class="p" style="width:100%" onclick="openSh(\'debt\')">تسجيل دين جديد</button>'}
+async function pay(id){var d=S.debts.filter(function(x){return x.id===id})[0],a=+$('pa'+id).value,e=$('pe'+id);if(!(a>0)){e.textContent='أدخل مبلغاً صحيحاً';return}if(a>d.amt-d.paid){e.textContent='المبلغ أكبر من المتبقي ('+money(d.amt-d.paid,d.currency)+')';return}if(await run(db.rpc('pay_debt',{p_id:id,p_amt:a,p_src:$('ps'+id).value}),e))toast('تم التسديد')}
+function rep(){var from=Date.now()-{day:1,week:7,month:30,year:365}[per]*D;var h='<div class="chips">'+[['day','اليوم'],['week','الأسبوع'],['month','الشهر'],['year','السنة']].map(function(p){return '<button class="'+(per===p[0]?'on':'')+'" onclick="per=\''+p[0]+'\';render()">'+p[1]+'</button>'}).join('')+'</div>';
+ ['IQD','USD'].forEach(function(c){var ex=S.log.filter(function(e){return e.t==='expense'&&e.ts>=from&&e.currency===c}),tot=ex.reduce(function(a,e){return a+e.amt},0),inc=sum('income',from,c),by={},who={};ex.forEach(function(e){by[e.cat||'أخرى']=(by[e.cat||'أخرى']||0)+e.amt;who[e.who]=(who[e.who]||0)+e.amt});
+ function bars(o){var k=Object.keys(o).sort(function(a,b){return o[b]-o[a]});return k.length?k.map(function(x){return '<div style="margin-bottom:10px"><div class="row"><span>'+esc(x)+'</span><b>'+money(o[x],c)+'</b></div><div class="bar"><i style="width:'+(tot?Math.min(100,Math.round(o[x]/tot*100)):0)+'%"></i></div></div>'}).join(''):'<div class="sub">لا توجد مصروفات في هذه الفترة.</div>'}
+ h+='<h2>التقرير · '+currName(c)+'</h2><div class="grid"><div class="m"><small>الدخل</small><b class="pos">'+money(inc,c)+'</b></div><div class="m"><small>المصروفات</small><b class="neg">'+money(tot,c)+'</b></div></div><div class="m" style="margin-bottom:10px"><small>المتبقي من الدخل</small><b>'+money(inc-tot,c)+'</b></div><h2>حسب نوع المصروف</h2><div class="card">'+bars(by)+'</div><h2>حسب الفرد</h2><div class="card">'+bars(who)+'</div>'});
+ h+='<h2>أهداف الادخار</h2>'+(S.goals.length?S.goals.map(function(g){var p=g.tg?Math.min(100,Math.round(g.sv/g.tg*100)):0;return '<div class="card"><div class="row"><b>'+esc(g.n)+'</b><span class="tag">'+p+'%</span></div><div class="sub">'+currName(g.currency)+'</div><div class="bar"><i style="width:'+p+'%"></i></div><div class="sub" style="margin-top:6px">'+money(g.sv,g.currency)+' من '+money(g.tg,g.currency)+' · المتبقي '+money(Math.max(0,g.tg-g.sv),g.currency)+'</div></div>'}).join(''):'<div class="card sub">لا توجد أهداف ادخار بعد.</div>');
+ h+='<div class="card"><label>هدف ادخار جديد</label><input id="gn" placeholder="مثال: السفر"><label>العملة</label><select id="gc"><option value="IQD">دينار عراقي</option><option value="USD">دولار أمريكي</option></select><label>المبلغ المستهدف</label><input id="gt" type="number" inputmode="decimal" placeholder="المبلغ"><button class="p" style="margin-top:8px;width:100%" onclick="addG()">إنشاء هدف</button><div class="err" id="e3"></div></div>';return h}
+async function addG(){var n=$('gn').value.trim(),t=+$('gt').value,c=$('gc').value,e=$('e3');if(!n||!(t>0)){e.textContent='أدخل اسم الهدف ومبلغاً صحيحاً';return}if(await run(db.rpc('add_goal',{p_n:n,p_t:t,p_currency:c}),e))toast('تم إنشاء الهدف')}
+function lg(){var l=S.log.slice().reverse().filter(function(e){return ft==='all'||e.t===ft});var h='<div class="chips">'+[['all','الكل'],['income','دخل'],['expense','مصروف'],['withdraw','سحب'],['transfer','تحويل'],['debt','دين'],['debtpay','تسديد'],['goal','ادخار']].map(function(p){return '<button class="'+(ft===p[0]?'on':'')+'" onclick="ft=\''+p[0]+'\';render()">'+p[1]+'</button>'}).join('')+'</div>';return h+'<div class="card">'+(l.length?l.map(ent).join(''):'<div class="sub">لا توجد عمليات من هذا النوع.</div>')+'</div>'}
+function render(){var t={home:'مصروف البيت',fam:'العائلة',debt:'الديون',rep:'التقارير',log:'سجل العمليات'};$('main').innerHTML='<div class="top"><h1>'+t[pg]+'</h1><span class="tag">'+esc(S.fam)+'</span></div>'+({home:home,fam:fam,debt:debt,rep:rep,log:lg})[pg]();$('nav').innerHTML=pages.map(function(p){return '<button class="'+(pg===p[0]?'on':'')+'" onclick="pg=\''+p[0]+'\';render();scrollTo(0,0)">'+ico(p[2])+p[1]+'</button>'}).join('')}
 function openSh(t){typ=t;drawSh();$('ov').classList.add('show')}
 function closeSh(){$('ov').classList.remove('show')}
 $('ov').addEventListener('click',function(e){if(e.target===this)closeSh()});
 $('fab').onclick=function(){openSh(typ)};
 function drawSh(){var n=names(),h='<div class="row"><b style="font-size:17px">إضافة عملية</b><button onclick="closeSh()" aria-label="إغلاق">✕</button></div><div class="chips" style="margin-top:10px">'+Object.keys(types).map(function(k){return '<button class="'+(typ===k?'on':'')+'" onclick="typ=\''+k+'\';drawSh()">'+types[k]+'</button>'}).join('')+'</div>';
-var wl={income:'من أضاف المبلغ',expense:'من قام بالدفع',withdraw:'من يسحب',transfer:'المرسل',debt:'المدين',goal:''}[typ];
-if(wl)h+='<label>'+wl+'</label><select id="who">'+opts(n)+'</select>';
-if(typ==='transfer')h+='<label>المستلم</label><select id="to">'+opts(n.slice(1).concat(n[0]))+'</select>';
-if(typ==='expense')h+='<label>نوع المصروف</label><select id="cat">'+opts(cats)+'</select><label>مصدر الدفع</label><select id="src"><option>صندوق البيت</option><option>رصيدي الشخصي</option></select>';
-if(typ==='debt')h+='<label>صاحب الدين (شخص أو محل)</label><input id="cr" placeholder="مثال: محل أبو علي">';
-if(typ==='goal')h+='<label>الهدف</label><select id="gl">'+opts(S.goals.map(function(g){return g.n}))+'</select>';
-h+='<label>المبلغ (د.ع)</label><input id="am" type="number" inputmode="numeric" placeholder="50000"><label>ملاحظة (اختيارية)</label><input id="nt" placeholder="مثال: خضار وفواكه"><div class="err" id="er"></div><button class="p" style="width:100%" onclick="save()">تأكيد العملية</button>';$('sh').innerHTML=h}
-async function save(){var er=$('er'),a=+$('am').value,g=function(i){return $(i)?$(i).value:''},nt=$('nt').value.trim(),w=g('who'),to=g('to'),cr=g('cr').trim(),cat=g('cat'),gl=S.goals.filter(function(x){return x.n===g('gl')})[0];
-if(!(a>0)){er.textContent='أدخل مبلغاً أكبر من صفر';return}
-if(typ==='transfer'&&to===w){er.textContent='اختر مستلماً مختلفاً عن المرسل';return}
-if(typ==='debt'&&!cr){er.textContent='اكتب اسم صاحب الدين';return}
-if(typ==='goal'&&!gl){er.textContent='أنشئ هدفاً أولاً من صفحة التقارير';return}
-var txt={income:nt||'إضافة دخل',expense:nt||cat,withdraw:nt||'سحب من الصندوق',transfer:'تحويل إلى '+to+(nt?' - '+nt:''),debt:'دين لـ '+cr,goal:'ادخار: '+(gl?gl.n:'')}[typ];
-var ok=await run(db.rpc('do_op',{p_t:typ,p_who:w,p_to:to||null,p_amt:a,p_note:txt,p_cat:cat||null,p_fund:typ==='expense'?g('src')==='صندوق البيت':true,p_cred:cr||null,p_goal:gl?gl.id:null}),er);
-if(ok){closeSh();toast('تم حفظ العملية')}}
+ h+='<label>عملة العملية</label><select id="currency" onchange="currency=this.value;drawSh()"><option value="IQD"'+(currency==='IQD'?' selected':'')+'>دينار عراقي (د.ع)</option><option value="USD"'+(currency==='USD'?' selected':'')+'>دولار أمريكي ($)</option></select>';
+ var wl={income:'من أضاف المبلغ',expense:'من قام بالدفع',withdraw:'من يستلم المبلغ',transfer:'المرسل',debt:'المدين',goal:''}[typ];if(wl)h+='<label>'+wl+'</label><select id="who">'+opts(n)+'</select>';
+ if(typ==='transfer')h+='<label>المستلم</label><select id="to">'+opts(n.slice(1).concat(n[0]))+'</select>';
+ if(typ==='expense')h+='<label>نوع المصروف</label><select id="cat">'+opts(cats)+'</select><label>مصدر الدفع</label><select id="src"><option>صندوق البيت</option><option>رصيدي الشخصي</option></select>';
+ if(typ==='debt')h+='<label>صاحب الدين (شخص أو محل)</label><input id="cr" placeholder="مثال: محل أبو علي">';
+ if(typ==='goal'){var gs=S.goals.filter(function(g){return g.currency===currency});h+='<label>الهدف ('+currName(currency)+')</label><select id="gl"><option value="">اختر الهدف</option>'+gs.map(function(g){return '<option value="'+g.id+'">'+esc(g.n)+'</option>'}).join('')+'</select>'}
+ h+='<label>المبلغ ('+(currency==='USD'?'$':'د.ع')+')</label><input id="am" type="number" inputmode="decimal" placeholder="'+(currency==='USD'?'100':'50000')+'"><label>ملاحظة (اختيارية)</label><input id="nt" placeholder="مثال: خضار وفواكه"><div class="err" id="er"></div><button class="p" style="width:100%" onclick="save()">تأكيد العملية</button>';$('sh').innerHTML=h}
+async function save(){var er=$('er'),a=+$('am').value,g=function(i){return $(i)?$(i).value:''},nt=$('nt').value.trim(),w=g('who'),to=g('to'),cr=g('cr').trim(),cat=g('cat'),c=g('currency'),goalId=g('gl');
+ if(!(a>0)){er.textContent='أدخل مبلغاً أكبر من صفر';return}if(typ==='transfer'&&to===w){er.textContent='اختر مستلماً مختلفاً عن المرسل';return}if(typ==='debt'&&!cr){er.textContent='اكتب اسم صاحب الدين';return}if(typ==='goal'&&!goalId){er.textContent='اختر هدفاً من العملة نفسها أو أنشئ هدفاً أولاً من صفحة التقارير';return}
+ var txt={income:nt||'إضافة دخل',expense:nt||cat,withdraw:nt||'سحب من الصندوق',transfer:'تحويل إلى '+to+(nt?' - '+nt:''),debt:'دين لـ '+cr,goal:'ادخار: '+(S.goals.filter(function(x){return String(x.id)===String(goalId)})[0]||{}).n}[typ];
+ var ok=await run(db.rpc('do_op',{p_t:typ,p_who:w||null,p_to:to||null,p_amt:a,p_note:txt,p_cat:cat||null,p_fund:typ==='expense'?g('src')==='صندوق البيت':true,p_cred:cr||null,p_goal:goalId||null,p_currency:c}),er);if(ok){closeSh();toast('تم حفظ العملية')}}
 boot();
 </script>
 </body>
