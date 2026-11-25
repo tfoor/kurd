@@ -79,10 +79,15 @@ return true}
 async function run(p,el){var r=await p;if(r.error){el.textContent=/check constraint/.test(r.error.message)?'الرصيد غير كافٍ':r.error.message;return false}await load();render();return true}
 function show(on){$('fab').style.display=on?'':'none';document.querySelector('nav').style.display=on?'':'none'}
 async function boot(){var s=await db.auth.getSession();if(!s.data.session){authUI();return}if(await load()){show(true);render()}else famUI()}
-function authUI(){show(false);$('main').innerHTML='<div class="top"><h1>مصروف البيت</h1></div><div class="card"><label>البريد الإلكتروني</label><input id="em" type="email" autocomplete="email"><label>كلمة المرور</label><input id="pw" type="password" autocomplete="current-password"><div class="err" id="ae"></div><div class="mini"><button class="p" style="flex:1" onclick="auth(1)">دخول</button><button style="flex:1" onclick="auth(0)">حساب جديد</button></div></div>'}
-async function auth(login){var c={email:$('em').value.trim(),password:$('pw').value},r=login?await db.auth.signInWithPassword(c):await db.auth.signUp(c);
-if(r.error){$('ae').textContent=r.error.message;return}
-if(!r.data.session){$('ae').textContent='أكّد بريدك الإلكتروني ثم ادخل';return}boot()}
+function authUI(){show(false);$('main').innerHTML='<div class="top"><h1>مصروف البيت</h1></div><div class="card"><button class="p" style="width:100%;padding:12px" onclick="gl()">الدخول بحساب Google</button><div class="sub" style="text-align:center;margin-top:10px">أو بالبريد الإلكتروني</div><label>البريد الإلكتروني</label><input id="em" type="email" autocomplete="email"><label>كلمة المرور</label><input id="pw" type="password" autocomplete="current-password"><div class="err" id="ae"></div><div class="mini"><button class="p" style="flex:1" onclick="auth(1)">دخول</button><button style="flex:1" onclick="auth(0)">حساب جديد</button></div></div>'}
+async function auth(login){var e=$('ae'),c={email:$('em').value.trim(),password:$('pw').value};
+if(!c.email||c.password.length<6){e.style.color='';e.textContent='أدخل بريداً صحيحاً وكلمة مرور من 6 أحرف على الأقل';return}
+e.style.color='var(--tx2)';e.textContent=login?'جارٍ الدخول...':'جارٍ إنشاء الحساب...';
+try{var r=login?await db.auth.signInWithPassword(c):await db.auth.signUp(c);
+if(r.error){e.style.color='';e.textContent=r.error.message;return}
+if(!r.data.session){e.style.color='';e.textContent=(!login&&r.data.user&&r.data.user.identities&&!r.data.user.identities.length)?'هذا البريد مسجل مسبقاً، اضغط دخول أو استخدم Google':'تم إنشاء الحساب. افتح رسالة التأكيد في بريدك (وتحقق من Spam) ثم اضغط دخول';return}
+boot()}catch(x){e.style.color='';e.textContent='تعذر الاتصال: '+x.message}}
+async function gl(){var r=await db.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});if(r.error)$('ae').textContent=r.error.message}
 function famUI(){show(false);$('main').innerHTML='<div class="top"><h1>إنشاء حساب العائلة</h1></div><div class="card"><label>اسم العائلة</label><input id="fn" placeholder="عائلة أبو أحمد"><label>اسمك</label><input id="mn" placeholder="الأب"><div class="err" id="fe"></div><button class="p" style="width:100%;margin-top:8px" onclick="mk()">إنشاء</button><button style="width:100%;margin-top:8px" onclick="out()">تسجيل الخروج</button></div>'}
 async function mk(){var a=$('fn').value.trim(),b=$('mn').value.trim();if(!a||!b){$('fe').textContent='أدخل اسم العائلة واسمك';return}
 var r=await db.rpc('create_family',{p_fam:a,p_me:b});if(r.error){$('fe').textContent=r.error.message;return}boot()}
